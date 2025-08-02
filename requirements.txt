@@ -1,9 +1,6 @@
-pip>=25.2
-setuptools>=70.0.0
-wheel>=0.43.0
 streamlit
 pandas
 requests
 python-dotenv
 nltk
-serpapi>=0.4.0
+serpapi==0.1.5

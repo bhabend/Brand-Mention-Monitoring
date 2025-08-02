@@ -1,29 +1,28 @@
 import os
-from serpapi.google_search_results import GoogleSearch
+from dotenv import load_dotenv
+from serpapi import serpapi_search  # Not GoogleSearch for v0.1.5
 
-def fetch_google_news(keyword, serp_api_key, max_results=10):
-    """Fetch Google News search results using SerpAPI."""
+load_dotenv()
+
+def fetch_google_news(keyword, limit=10):
     params = {
         "engine": "google",
-        "q": f"{keyword} site:news.google.com",
-        "api_key": serp_api_key,
-        "num": max_results,
+        "q": keyword,
         "tbm": "nws",
+        "api_key": os.getenv("SERPAPI_API_KEY"),
+        "num": limit,
     }
 
-    search = GoogleSearch(params)
-    results = search.get_dict()
-
+    results = serpapi_search(params)
     news_results = results.get("news_results", [])
-    cleaned_results = []
-
-    for item in news_results:
-        cleaned_results.append({
-            "title": item.get("title"),
-            "link": item.get("link"),
-            "source": item.get("source"),
-            "snippet": item.get("snippet"),
-            "published": item.get("date") or item.get("published_date"),
-        })
-
-    return cleaned_results
+    articles = [
+        {
+            "title": article.get("title"),
+            "link": article.get("link"),
+            "snippet": article.get("snippet"),
+            "source": article.get("source"),
+            "date": article.get("date"),
+        }
+        for article in news_results
+    ]
+    return articles

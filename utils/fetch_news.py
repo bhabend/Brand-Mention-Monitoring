@@ -1,7 +1,5 @@
-# utils/fetch_news.py
-
-import requests
-from serpapi import GoogleSearch
+import os
+from serpapi.google_search_results import GoogleSearch
 
 def fetch_google_news(keyword, serp_api_key, max_results=10):
     """Fetch Google News search results using SerpAPI."""
@@ -16,14 +14,16 @@ def fetch_google_news(keyword, serp_api_key, max_results=10):
     search = GoogleSearch(params)
     results = search.get_dict()
 
-    articles = []
-    for result in results.get("news_results", []):
-        articles.append({
-            "title": result.get("title"),
-            "link": result.get("link"),
-            "snippet": result.get("snippet"),
-            "source": result.get("source"),
-            "date": result.get("date"),
+    news_results = results.get("news_results", [])
+    cleaned_results = []
+
+    for item in news_results:
+        cleaned_results.append({
+            "title": item.get("title"),
+            "link": item.get("link"),
+            "source": item.get("source"),
+            "snippet": item.get("snippet"),
+            "published": item.get("date") or item.get("published_date"),
         })
 
-    return articles
+    return cleaned_results

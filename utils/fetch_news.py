@@ -1,55 +1,29 @@
-import os
+# utils/fetch_news.py
+
 import requests
-from datetime import datetime
+from serpapi import GoogleSearch
 
-SERPAPI_KEY = os.getenv("SERPAPI_KEY")
+def fetch_google_news(keyword, serp_api_key, max_results=10):
+    """Fetch Google News search results using SerpAPI."""
+    params = {
+        "engine": "google",
+        "q": f"{keyword} site:news.google.com",
+        "api_key": serp_api_key,
+        "num": max_results,
+        "tbm": "nws",
+    }
 
-def fetch_mentions(keyword):
-    results = []
+    search = GoogleSearch(params)
+    results = search.get_dict()
 
-    platforms = [
-        {"engine": "google_news"},
-        {"engine": "youtube"},
-        {"engine": "reddit"}
-    ]
+    articles = []
+    for result in results.get("news_results", []):
+        articles.append({
+            "title": result.get("title"),
+            "link": result.get("link"),
+            "snippet": result.get("snippet"),
+            "source": result.get("source"),
+            "date": result.get("date"),
+        })
 
-    for platform in platforms:
-        params = {
-            "engine": platform["engine"],
-            "q": keyword,
-            "api_key": SERPAPI_KEY,
-            "num": 10
-        }
-        response = requests.get("https://serpapi.com/search", params=params)
-        if response.status_code == 200:
-            data = response.json()
-            if platform["engine"] == "google_news":
-                for item in data.get("news_results", []):
-                    results.append({
-                        "platform": "Google News",
-                        "title": item.get("title"),
-                        "text": item.get("snippet"),
-                        "url": item.get("link"),
-                        "timestamp": item.get("date", datetime.now().isoformat())
-                    })
-            elif platform["engine"] == "youtube":
-                for item in data.get("video_results", []):
-                    results.append({
-                        "platform": "YouTube",
-                        "title": item.get("title"),
-                        "text": item.get("description"),
-                        "url": item.get("link"),
-                        "timestamp": datetime.now().isoformat()
-                    })
-            elif platform["engine"] == "reddit":
-                for item in data.get("organic_results", []):
-                    results.append({
-                        "platform": "Reddit",
-                        "title": item.get("title"),
-                        "text": item.get("snippet"),
-                        "url": item.get("link"),
-                        "timestamp": datetime.now().isoformat()
-                    })
-        else:
-            print(f"Error fetching from {platform['engine']}: {response.status_code}")
-    return results
+    return articles

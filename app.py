@@ -1,35 +1,53 @@
 import os
 import streamlit as st
 import pandas as pd
-from dotenv import load_dotenv
-from utils.fetch_data import fetch_mentions
+from utils.fetch_news import fetch_google_news
 from utils.sentiment import analyze_sentiment
+from datetime import datetime
 
-load_dotenv()
+# Required for Render deployment
+os.environ['STREAMLIT_SERVER_ENABLE_CORS'] = 'false'
+os.environ['STREAMLIT_SERVER_HEADLESS'] = 'true'
+os.environ['STREAMLIT_SERVER_PORT'] = os.getenv('PORT', '10000')
+os.environ['STREAMLIT_SERVER_ADDRESS'] = '0.0.0.0'
 
+# Streamlit page setup
 st.set_page_config(page_title="Brand Mention Monitor", layout="wide")
-st.title("🔎 Brand Mention Monitoring Dashboard")
+st.title("📣 Brand Mention Monitor")
+st.markdown("Monitor your brand mentions with sentiment analysis from Google News.")
 
-keyword = st.text_input("Enter Brand Name or Keyword(s):", placeholder="e.g. OpenAI, Bitcoin, Nike")
+# Keyword input
+keyword = st.text_input("Enter keyword or brand name", placeholder="e.g., OpenAI, Solana, Netflix")
 
-if st.button("Fetch Mentions") and keyword:
-    with st.spinner("Fetching data from platforms..."):
-        raw_data = fetch_mentions(keyword)
-        df = pd.DataFrame(raw_data)
+# Button
+if st.button("🔍 Fetch Mentions"):
+    if not keyword.strip():
+        st.warning("Please enter a keyword.")
+    else:
+        with st.spinner("Fetching mentions..."):
+            data = fetch_google_news(keyword)
+            if data.empty:
+                st.warning("No mentions found.")
+            else:
+                data["sentiment"] = data["snippet"].apply(analyze_sentiment)
 
-        if df.empty:
-            st.warning("No mentions found.")
-        else:
-            df["sentiment"] = df["text"].apply(analyze_sentiment)
+                # Display sentiment breakdown
+                sentiment_counts = data["sentiment"].value_counts().reset_index()
+                sentiment_counts.columns = ["Sentiment", "Count"]
+                st.subheader("📊 Sentiment Breakdown")
+                st.bar_chart(sentiment_counts.set_index("Sentiment"))
 
-            st.subheader("📊 Sentiment Overview")
-            sentiment_count = df["sentiment"].value_counts()
-            st.bar_chart(sentiment_count)
+                # Show full data
+                st.subheader("🗞️ Mentions")
+                st.dataframe(data[["title", "link", "snippet", "source", "date", "sentiment"]])
 
-            st.subheader("🗂️ Mentions")
-            st.dataframe(df[["platform", "title", "text", "url", "timestamp", "sentiment"]])
-
-            csv = df.to_csv(index=False).encode('utf-8')
-            st.download_button("📥 Download CSV", data=csv, file_name="mentions.csv", mime="text/csv")
-else:
-    st.info("Enter a keyword and click 'Fetch Mentions' to begin.")
+                # CSV download
+                st.subheader("⬇️ Download Mentions as CSV")
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                csv = data.to_csv(index=False).encode("utf-8")
+                st.download_button(
+                    label="Download CSV",
+                    data=csv,
+                    file_name=f"{keyword}_mentions_{timestamp}.csv",
+                    mime="text/csv",
+                )

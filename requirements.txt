@@ -3,4 +3,4 @@ pandas
 requests
 python-dotenv
 nltk
-serpapi==0.7.2
+serpapi

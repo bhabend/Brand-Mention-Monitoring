@@ -2,55 +2,56 @@ import os
 from serpapi import GoogleSearch
 from urllib.parse import urlparse
 
-CATEGORY_MAP = {
-    "reddit.com": "Community",
-    "quora.com": "Community",
-    "stackexchange.com": "Community",
-    "stackoverflow.com": "Community",
-    "youtube.com": "Video",
-    "medium.com": "Blog",
-    "wordpress.com": "Blog",
-    "blogspot.com": "Blog",
-    "forbes.com": "News",
-    "cnn.com": "News",
-    "nytimes.com": "News",
-    "bbc.com": "News",
-    "theguardian.com": "News",
-    "techcrunch.com": "News"
-}
+def fetch_results_from_serpapi(query, num_pages=3):
+    api_key = os.getenv("SERPAPI_API_KEY") or os.getenv("SERPAPI_KEY")
+    if not api_key:
+        raise ValueError("SerpAPI key not set in environment")
 
-def get_category(url):
-    domain = urlparse(url).netloc.replace("www.", "")
-    for known_domain in CATEGORY_MAP:
-        if known_domain in domain:
-            return CATEGORY_MAP[known_domain]
-    return "Other"
+    all_results = []
 
-def fetch_results_from_serpapi(query, num_results=20):
-    params = {
-        "engine": "google",
-        "q": query,
-        "api_key": os.getenv("SERPAPI_API_KEY"),
-        "num": num_results
-    }
+    for page in range(num_pages):
+        params = {
+            "engine": "google",
+            "q": query,
+            "api_key": api_key,
+            "start": page * 10,
+            "num": 10,
+        }
 
-    search = GoogleSearch(params)
-    results = search.get_dict()
+        search = GoogleSearch(params)
+        results = search.get_dict()
 
-    organic_results = results.get("organic_results", [])
-    filtered_results = []
+        if "error" in results:
+            print("SerpAPI Error:", results["error"])
+            break
 
-    for result in organic_results:
-        link = result.get("link")
-        title = result.get("title")
-        snippet = result.get("snippet", "")
-        if link and title:
-            filtered_results.append({
+        organic_results = results.get("organic_results", [])
+        for item in organic_results:
+            title = item.get("title", "")
+            link = item.get("link", "")
+            snippet = item.get("snippet", "")
+            date = item.get("date", "")
+            source_url = urlparse(link).netloc
+
+            # Categorize based on domain
+            if "reddit.com" in source_url:
+                category = "Community"
+            elif "youtube.com" in source_url:
+                category = "Video"
+            elif any(site in source_url for site in ["forbes", "bloomberg", "cnn", "bbc", "reuters"]):
+                category = "News"
+            elif any(site in source_url for site in ["medium", "substack", "blog", "wordpress"]):
+                category = "Blog"
+            else:
+                category = "Other"
+
+            all_results.append({
                 "title": title,
                 "link": link,
                 "snippet": snippet,
-                "source": urlparse(link).netloc.replace("www.", ""),
-                "category": get_category(link)
+                "source": source_url,
+                "category": category,
+                "date": date,
             })
 
-    return filtered_results
+    return all_results

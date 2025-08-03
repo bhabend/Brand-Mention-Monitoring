@@ -1,16 +1,15 @@
 import csv
-import os
 
-def save_results_to_csv(results, query):
-    safe_query = query.replace(" ", "_").lower()
-    filename = f"/mnt/data/{safe_query}_brand_mentions.csv"
+def save_results_to_csv(results, filename="brand_mentions.csv"):
+    with open(filename, mode="w", newline="", encoding="utf-8") as file:
+        writer = csv.writer(file)
+        writer.writerow(["Title", "Link", "Snippet", "Source", "Category"])
 
-    try:
-        with open(filename, mode="w", newline="", encoding="utf-8") as file:
-            writer = csv.DictWriter(file, fieldnames=["source", "title", "link", "snippet", "sentiment"])
-            writer.writeheader()
-            writer.writerows(results)
-        return filename
-    except Exception as e:
-        print(f"[ERROR] Failed to save CSV: {e}")
-        return None
+        for result in results:
+            writer.writerow([
+                result.get("title", ""),
+                result.get("link", ""),
+                result.get("snippet", ""),
+                result.get("source", ""),
+                result.get("category", "")
+            ])

@@ -1,0 +1,22 @@
+# Ignore environment variables and secret keys
+.env
+
+# Ignore Python cache and compiled files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore Jupyter/IPython notebooks checkpoints (if used)
+.ipynb_checkpoints/
+
+# Ignore outputs like CSVs or scraped data
+outputs/
+
+# Ignore virtual environments (local)
+venv/
+.venv/
+
+# Ignore OS-specific files
+.DS_Store
+Thumbs.db

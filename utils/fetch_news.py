@@ -1,48 +1,39 @@
+# fetch_news.py
+
 import requests
-import os
-from dotenv import load_dotenv
+from urllib.parse import urlparse
+from utils.sentiment import analyze_sentiment
 
-load_dotenv()
+def fetch_google_results(query, serpapi_key):
+    search_url = "https://serpapi.com/search.json"
+    params = {
+        "q": query,
+        "api_key": serpapi_key,
+        "num": 100,
+        "hl": "en",
+    }
 
-def fetch_google_results(query, total_results=50):
-    api_key = os.getenv("SERPAPI_KEY")
-    if not api_key:
-        print("[ERROR] SERPAPI_KEY not found")
-        return []
+    response = requests.get(search_url, params=params)
+    data = response.json()
 
-    all_results = []
-    start = 0
+    results = []
+    organic_results = data.get("organic_results", [])
 
-    while len(all_results) < total_results:
-        params = {
-            "q": query,
-            "api_key": api_key,
-            "engine": "google",
-            "num": 10,       # Max allowed per page
-            "start": start   # Pagination offset
-        }
+    for result in organic_results:
+        title = result.get("title", "")
+        link = result.get("link", "")
+        snippet = result.get("snippet", "")
 
-        try:
-            response = requests.get("https://serpapi.com/search.json", params=params, timeout=10)
-            response.raise_for_status()
-            organic = response.json().get("organic_results", [])
-            print(f"Fetched {len(organic)} results at start={start}")
+        # Dynamically extract source from link
+        parsed_url = urlparse(link)
+        domain = parsed_url.netloc.replace("www.", "")
 
-            if not organic:
-                break  # No more results
+        results.append({
+            "source": domain,
+            "title": title,
+            "link": link,
+            "snippet": snippet,
+            "sentiment": analyze_sentiment(f"{title} {snippet}"),
+        })
 
-            for r in organic:
-                all_results.append({
-                    "source": "Google",
-                    "title": r.get("title"),
-                    "link": r.get("link"),
-                    "snippet": r.get("snippet", ""),
-                })
-
-            start += 10
-
-        except Exception as e:
-            print(f"[ERROR] SerpAPI request failed: {e}")
-            break
-
-    return all_results[:total_results]
+    return results

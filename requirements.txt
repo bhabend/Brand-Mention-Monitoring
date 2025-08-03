@@ -3,3 +3,6 @@ requests
 pandas
 python-dotenv
 textblob
+nltk
+transformers
+vaderSentiment

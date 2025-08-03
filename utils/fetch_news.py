@@ -1,28 +1,30 @@
+import requests
 import os
 from dotenv import load_dotenv
-from serpapi import serpapi_search  # Not GoogleSearch for v0.1.5
 
 load_dotenv()
 
-def fetch_google_news(keyword, limit=10):
+def fetch_google_results(query, num_results=10):
+    url = "https://serpapi.com/search.json"
     params = {
+        "q": query,
+        "api_key": os.getenv("SERPAPI_KEY"),
         "engine": "google",
-        "q": keyword,
-        "tbm": "nws",
-        "api_key": os.getenv("SERPAPI_API_KEY"),
-        "num": limit,
+        "num": num_results,
     }
-
-    results = serpapi_search(params)
-    news_results = results.get("news_results", [])
-    articles = [
-        {
-            "title": article.get("title"),
-            "link": article.get("link"),
-            "snippet": article.get("snippet"),
-            "source": article.get("source"),
-            "date": article.get("date"),
-        }
-        for article in news_results
-    ]
-    return articles
+    try:
+        response = requests.get(url, params=params, timeout=10)
+        response.raise_for_status()
+        results = response.json().get("organic_results", [])
+        return [
+            {
+                "source": "Google",
+                "title": r.get("title"),
+                "link": r.get("link"),
+                "snippet": r.get("snippet", ""),
+            }
+            for r in results
+        ]
+    except requests.exceptions.RequestException as e:
+        print(f"[ERROR] Failed to fetch from SerpAPI: {e}")
+        return []

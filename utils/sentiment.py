@@ -1,17 +1,12 @@
-import nltk
-from nltk.sentiment.vader import SentimentIntensityAnalyzer
-
-nltk.download('vader_lexicon')
-analyzer = SentimentIntensityAnalyzer()
+from textblob import TextBlob
 
 def analyze_sentiment(text):
     if not text:
-        return "neutral"
-    score = analyzer.polarity_scores(text)
-    compound = score["compound"]
-    if compound >= 0.05:
-        return "positive"
-    elif compound <= -0.05:
-        return "negative"
+        return "Neutral"
+    polarity = TextBlob(text).sentiment.polarity
+    if polarity > 0.1:
+        return "Positive"
+    elif polarity < -0.1:
+        return "Negative"
     else:
-        return "neutral"
+        return "Neutral"

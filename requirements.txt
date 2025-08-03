@@ -6,4 +6,4 @@ textblob
 nltk
 transformers
 vaderSentiment
-serpapi
+google-search-results

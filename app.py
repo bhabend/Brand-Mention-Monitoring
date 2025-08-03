@@ -5,29 +5,24 @@ from utils.save_to_csv import save_results_to_csv
 
 st.set_page_config(page_title="Brand Mention Monitoring", layout="wide")
 
-st.title("🔍 Brand Mention Monitoring App")
-st.markdown("Enter a **brand name** or keyword to track recent mentions from news, blogs, videos, and community posts.")
+st.title("🔍 Brand Mention Monitoring Tool")
 
-keyword = st.text_input("Enter brand or keyword:", placeholder="e.g., Tesla")
+keyword = st.text_input("Enter brand or keyword to monitor:", value="Tesla")
 
 if st.button("Fetch Mentions"):
-    if not keyword.strip():
-        st.warning("Please enter a keyword.")
-    else:
-        with st.spinner("Fetching mentions..."):
+    if keyword:
+        with st.spinner("Fetching data..."):
             results = fetch_results_from_serpapi(keyword)
             if results:
                 df = pd.DataFrame(results)
-                save_results_to_csv(df)
-                st.success(f"Found {len(results)} mentions.")
+                st.success(f"Found {len(df)} mentions for '{keyword}'")
                 st.dataframe(df)
 
-                csv = df.to_csv(index=False).encode("utf-8")
-                st.download_button(
-                    label="📥 Download CSV",
-                    data=csv,
-                    file_name=f"{keyword}_mentions.csv",
-                    mime="text/csv",
-                )
+                # Save CSV
+                save_results_to_csv(results)
+                with open("results.csv", "rb") as f:
+                    st.download_button("Download CSV", f, file_name="results.csv")
             else:
-                st.error("No results found. Check your query or SerpAPI quota.")
+                st.warning("No results found. Check your query or SerpAPI quota.")
+    else:
+        st.error("Please enter a keyword.")

@@ -9,14 +9,16 @@ st.title("🔍 Brand Mention Monitoring Tool")
 
 query = st.text_input("Enter brand or keyword to search", "")
 
+limit = st.slider("How many mentions to fetch?", min_value=10, max_value=50, value=30, step=10)
+
 if st.button("Fetch Mentions") and query.strip():
-    st.info(f"Fetching Google results for: `{query}`...")
-    results = fetch_google_results(query)
+    st.info(f"Fetching up to {limit} Google results for: `{query}`...")
+    results = fetch_google_results(query, total_results=limit)
 
     if not results:
-        st.warning("⚠️ No results found. Check your query, SerpAPI key, or quota.")
+        st.warning("⚠️ No results found. Check your query or SerpAPI quota.")
         st.stop()
-    
+
     # Add sentiment analysis
     for r in results:
         combined_text = f"{r['title']} {r['snippet']}"

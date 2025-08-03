@@ -1,15 +1,20 @@
 import csv
 
-def save_results_to_csv(results, filename="brand_mentions.csv"):
-    with open(filename, mode="w", newline="", encoding="utf-8") as file:
-        writer = csv.writer(file)
-        writer.writerow(["Title", "Link", "Snippet", "Source", "Category"])
+def save_results_to_csv(results, filename="results.csv"):
+    if not results:
+        return
 
+    keys = ["title", "link", "snippet", "source", "category", "date"]
+
+    with open(filename, mode="w", encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=keys)
+        writer.writeheader()
         for result in results:
-            writer.writerow([
-                result.get("title", ""),
-                result.get("link", ""),
-                result.get("snippet", ""),
-                result.get("source", ""),
-                result.get("category", "")
-            ])
+            writer.writerow({
+                "title": result.get("title", ""),
+                "link": result.get("link", ""),
+                "snippet": result.get("snippet", ""),
+                "source": result.get("source", ""),
+                "category": result.get("category", ""),
+                "date": result.get("date", ""),
+            })

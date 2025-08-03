@@ -1,2 +1,5 @@
-streamlit==1.36.0
-serpapi==0.3.0
+streamlit
+requests
+pandas
+python-dotenv
+textblob

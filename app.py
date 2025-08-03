@@ -1,30 +1,28 @@
-import requests
-import os
-from dotenv import load_dotenv
+import streamlit as st
+from utils.fetch_news import fetch_google_results
+from utils.sentiment import analyze_sentiment
+from utils.save_to_csv import save_results_to_csv
 
-load_dotenv()
+st.set_page_config(page_title="Brand Mention Monitor", layout="wide")
 
-def fetch_google_results(query, num_results=10):
-    url = "https://serpapi.com/search.json"
-    params = {
-        "q": query,
-        "api_key": os.getenv("SERPAPI_KEY"),
-        "engine": "google",
-        "num": num_results,
-    }
-    try:
-        response = requests.get(url, params=params, timeout=10)
-        response.raise_for_status()
-        results = response.json().get("organic_results", [])
-        return [
-            {
-                "source": "Google",
-                "title": r.get("title"),
-                "link": r.get("link"),
-                "snippet": r.get("snippet", ""),
-            }
-            for r in results
-        ]
-    except requests.exceptions.RequestException as e:
-        print(f"[ERROR] Failed to fetch from SerpAPI: {e}")
-        return []
+st.title("🔍 Brand Mention Monitoring Tool")
+
+query = st.text_input("Enter brand or keyword to search", "")
+
+if st.button("Fetch Mentions") and query.strip():
+    st.info(f"Fetching Google results for: `{query}`...")
+    results = fetch_google_results(query)
+    
+    if not results:
+        st.warning("No results found.")
+    else:
+        for r in results:
+            r["sentiment"] = analyze_sentiment(r["title"] + " " + r["snippet"])
+
+        st.success(f"Found {len(results)} results.")
+        st.dataframe(results)
+
+        csv_file = save_results_to_csv(results, query)
+        if csv_file:
+            with open(csv_file, "rb") as f:
+                st.download_button("Download CSV", f, file_name=csv_file.split("/")[-1])

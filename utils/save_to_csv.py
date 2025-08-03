@@ -1,15 +1,16 @@
-import pandas as pd
-from datetime import datetime
+import csv
 import os
 
-def save_results_to_csv(data, query):
-    if not data:
+def save_results_to_csv(results, query):
+    safe_query = query.replace(" ", "_").lower()
+    filename = f"/mnt/data/{safe_query}_brand_mentions.csv"
+
+    try:
+        with open(filename, mode="w", newline="", encoding="utf-8") as file:
+            writer = csv.DictWriter(file, fieldnames=["source", "title", "link", "snippet", "sentiment"])
+            writer.writeheader()
+            writer.writerows(results)
+        return filename
+    except Exception as e:
+        print(f"[ERROR] Failed to save CSV: {e}")
         return None
-    df = pd.DataFrame(data)
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"{query.replace(' ', '_')}_results_{timestamp}.csv"
-    output_dir = "outputs"
-    os.makedirs(output_dir, exist_ok=True)
-    filepath = os.path.join(output_dir, filename)
-    df.to_csv(filepath, index=False)
-    return filepath
